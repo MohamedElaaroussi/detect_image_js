@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Saizeriya Spot the Difference</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script
+      src="http://www.skulpt.org/static/skulpt.min.js"
+      type="text/javascript"
+    ></script>
+    <link rel="stylesheet" href="./style.css" />
+    <script
+      src="http://www.skulpt.org/static/skulpt-stdlib.js"
+      type="text/javascript"
+    ></script>
+  </head>
+  <body>
+    <center>
+      <h2>Proweb Spot the Difference</h2>
+    </center>
+
+    <input type="file" id="fileInput1"  accept="image/*" />
+    <button onclick="selectImage(1)">Select Image 1</button><br /><br />
+
+    <input type="file" id="fileInput2" accept="image/*" />
+    <button onclick="selectImage(2)">Select Image 2</button><br /><br />
+
+    <button onclick="generateDifference()">Generate Difference</button>
+
+    <div id="differenceImageContainer"></div>
+
+    <script type="text/javascript">
+      var image1 = null;
+      var image2 = null;
+
+      function selectImage(index) {
+        var input = document.getElementById("fileInput" + index);
+        input.click();
+        input.onchange = function () {
+          var file = input.files[0];
+          var reader = new FileReader();
+          reader.onload = function () {
+            if (index == 1) {
+              image1 = reader.result;
+            } else {
+              image2 = reader.result;
+            }
+          };
+          reader.readAsDataURL(file);
+        };
+      }
+
+      function generateDifference() {
+        if (image1 === null || image2 === null) {
+          alert("Please select both images.");
+          return;
+        }
+
+        var img1 = document.createElement("img");
+        img1.src = image1;
+        img1.onload = function () {
+          var img2 = document.createElement("img");
+          img2.src = image2;
+          img2.onload = function () {
+            var canvas = document.createElement("canvas");
+            canvas.width = img1.width;
+            canvas.height = img1.height;
+            var ctx = canvas.getContext("2d");
+            ctx.drawImage(img1, 0, 0);
+            ctx.globalCompositeOperation = "difference";
+            ctx.drawImage(img2, 0, 0);
+            var diffImage = canvas.toDataURL();
+            var diffImgElement = document.createElement("img");
+            diffImgElement.src = diffImage;
+            document.getElementById("differenceImageContainer").innerHTML = "";
+            document
+              .getElementById("differenceImageContainer")
+              .appendChild(diffImgElement);
+          };
+        };
+      }
+    </script>
+  </body>
+</html>
