@@ -1,138 +1,165 @@
+
+
+
+
+
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détection d'Objets</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+</head>
+<body>
+    <input type="file" id="imageUpload" accept="image/*">
+    <canvas id="canvas"></canvas>
+    <script >
+        document.getElementById('imageUpload').addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+        
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+        
+            img.onload = async () => {
+                const model = await cocoSsd.load();
+                const canvas = document.getElementById('canvas');
+                const ctx = canvas.getContext('2d');
+        
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0, img.width, img.height);
+        
+                const predictions = await model.detect(img);
+        
+                predictions.forEach(prediction => {
+                    ctx.beginPath();
+                    ctx.rect(...prediction.bbox);
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = 'red';
+                    ctx.fillStyle = 'red';
+                    ctx.stroke();
+                    ctx.fillText(prediction.class, prediction.bbox[0], prediction.bbox[1] > 10 ? prediction.bbox[1] - 5 : 10);
+                });
+        
+                const result = predictions.map(pred => ({
+                    class: pred.class,
+                    // score: pred.score.toFixed(2),
+                    // bbox: pred.bbox
+                }));
+        
+                downloadJSON(result);
+            };
+        });
+        
+        function downloadJSON(data) {
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'result.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+
+    </script>
+</body>
+</html> -->
+
+
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Saizeriya Spot the Difference</title>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script
-      src="http://www.skulpt.org/static/skulpt.min.js"
-      type="text/javascript"
-    ></script>
-    <link rel="stylesheet" href="./style.css" />
-    <script
-      src="http://www.skulpt.org/static/skulpt-stdlib.js"
-      type="text/javascript"
-    ></script>
-  </head>
-  <body>
-    <center>
-      <input type="file" id="fileInput1" accept="image/*" />
-      <button onclick="selectImage(1)">Select Image 1</button><br /><br />
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détection d'Objets</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+</head>
+<body>
+    <input type="file" id="imageUpload" accept="image/*">
+    <canvas id="canvas"></canvas>
+    <script>
+        let firstImageJson = null;
+        let secondImageJson = null;
+        let attemptCount = 0;
 
-      <input type="file" id="fileInput2" accept="image/*" />
-      <button onclick="selectImage(2)">Select Image 2</button><br /><br />
+        document.getElementById('imageUpload').addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
 
-      <button onclick="generateDifference()">Generate Difference</button>
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
 
-      <div id="differenceImageContainer"></div>
-    </center>
-   
+            img.onload = async () => {
+                const model = await cocoSsd.load();
+                const canvas = document.getElementById('canvas');
+                const ctx = canvas.getContext('2d');
 
-    <script src="./script.js"></script>
-  </body>
-</html>
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0, img.width, img.height);
 
-<!-- 
+                const predictions = await model.detect(img);
 
+                predictions.forEach(prediction => {
+                    ctx.beginPath();
+                    ctx.rect(...prediction.bbox);
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = 'red';
+                    ctx.fillStyle = 'red';
+                    ctx.stroke();
+                    ctx.fillText(prediction.class, prediction.bbox[0], prediction.bbox[1] > 10 ? prediction.bbox[1] - 5 : 10);
+                });
 
+                const result = predictions.map(pred => ({
+                    class: pred.class,
+                }));
 
+                if (attemptCount === 0) {
+                    firstImageJson = result;
+                    attemptCount++;
+                    alert("Première image détectée et sauvegardée. Vous pouvez maintenant télécharger une autre image pour la comparaison.");
+                } else if (attemptCount === 1) {
+                    secondImageJson = result;
+                    attemptCount++;
 
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Saizeriya Spot the Difference</title>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="http://www.skulpt.org/static/skulpt.min.js" type="text/javascript"></script>
-    <link rel="stylesheet" href="./style.css" />
-    <script src="http://www.skulpt.org/static/skulpt-stdlib.js" type="text/javascript"></script>
-  </head>
-  <body>
-   
+                    compareAndReturnDifferentClasses(firstImageJson, secondImageJson);
+                } else {
+                    attemptCount = 0; // Réinitialisation si plus de deux images sont téléchargées
+                }
+            };
+        });
 
-    <input type="file" id="fileInput1"  accept="image/*" />
-    <button onclick="selectImage(1)">Select Image 1</button><br /><br />
+        function compareAndReturnDifferentClasses(firstJson, secondJson) {
+            const firstClasses = new Set(firstJson.map(item => item.class));
+            const secondClasses = new Set(secondJson.map(item => item.class));
+            const differentClasses = [...firstClasses].filter(classname => !secondClasses.has(classname));
 
-    <input type="file" id="fileInput2" accept="image/*" />
-    <button onclick="selectImage(2)">Select Image 2</button><br /><br />
+            const result = {
+                different_classes: differentClasses
+            };
 
-    <button onclick="generateDifference()">Generate Difference</button>
-
-    <div id="differenceImageContainer"></div>
-
-    <script type="text/javascript">
-      var image1 = null;
-      var image2 = null;
-
-      function selectImage(index) {
-        var input = document.getElementById("fileInput" + index);
-        input.click();
-        input.onchange = function () {
-          var file = input.files[0];
-          var reader = new FileReader();
-          reader.onload = function () {
-            if (index == 1) {
-              image1 = reader.result;
-            } else {
-              image2 = reader.result;
-            }
-          };
-          reader.readAsDataURL(file);
-        };   
-      }
-
-      function generateDifference() {
-        if (image1 === null || image2 === null) {
-          alert("Please select both images.");
-          return;
+            downloadJSON(result);
         }
 
-        var img1 = document.createElement("img");
-        img1.src = image1;
-        img1.onload = function () {
-          var img2 = document.createElement("img");
-          img2.src = image2;
-          img2.onload = function () {
-            var canvas = document.createElement("canvas");
-            canvas.width = img1.width;
-            canvas.height = img1.height;
-            var ctx = canvas.getContext("2d");
-            ctx.drawImage(img1, 0, 0);
-            ctx.globalCompositeOperation = "difference";
-            ctx.drawImage(img2, 0, 0);
-            var diffData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-
-            var diffObjects = {};
-
-            for (var i = 0; i < diffData.length; i += 4) {
-              var r = diffData[i];
-              var g = diffData[i + 1];
-              var b = diffData[i + 2];
-              var a = diffData[i + 3];
-
-              if (r !== 0 || g !== 0 || b !== 0 || a !== 0) {
-                var x = (i / 4) % canvas.width;
-                var y = Math.floor(i / (4 * canvas.width));
-
-                diffObjects[`${x},${y}`] = { r, g, b, a };
-              }
-            }
-
-            var jsonString = JSON.stringify(diffObjects);
-            var blob = new Blob([jsonString], { type: "application/json" });
-            var url = URL.createObjectURL(blob);
-
-            var link = document.createElement("a");
-            link.href = url;
-            link.download = "difference.json";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        function downloadJSON(data) {
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'result.json';
+            a.click();
             URL.revokeObjectURL(url);
-          };
-        };
-      }
+        }
     </script>
-  </body>
+</body>
 </html>
-
-
- -->
